@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # For GUI visualisation of RabbitMQ at http://localhost:15762/
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  php-server:
+    build: . # Build the PHP application from the current directory (server side)
+    image: phpdocker
+    depends_on:
+      - rabbitmq # Ensure RabbitMQ is started first
+    command: sleep 5 && php server.php # Sleep to ensure rabbitmq is correctly initialized
+  
+  php-client:
+    build: . # Build the PHP application from the current directory (client side)
+    image: phpdocker
+    depends_on:
+      - rabbitmq # Ensure RabbitMQ is started first
+    command: sleep 5 && php client.php # Sleep to ensure rabbitmq is correctly initialized
+
+volumes:
+  rabbitmq_data:
