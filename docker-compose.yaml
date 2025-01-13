@@ -8,20 +8,27 @@ services:
       - "15672:15672" # For GUI visualisation of RabbitMQ at http://localhost:15762/
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   php-server:
     build: . # Build the PHP application from the current directory (server side)
     image: phpdocker
     depends_on:
-      - rabbitmq # Ensure RabbitMQ is started first
-    command: sleep 5 && php server.php # Sleep to ensure rabbitmq is correctly initialized
+      rabbitmq:
+        condition: service_healthy # Ensure RabbitMQ is started first
+    command: php server.php # Sleep to ensure rabbitmq is correctly initialized
   
   php-client:
     build: . # Build the PHP application from the current directory (client side)
     image: phpdocker
     depends_on:
-      - rabbitmq # Ensure RabbitMQ is started first
-    command: sleep 5 && php client.php # Sleep to ensure rabbitmq is correctly initialized
+      rabbitmq:
+        condition: service_healthy # Ensure RabbitMQ is started first
+    command: php client.php # Sleep to ensure rabbitmq and server are correctly initialized
 
 volumes:
   rabbitmq_data:
